@@ -1,0 +1,141 @@
+@RequestMapping("index")
+public String index(ModelMap map){
+	logger.info("这里是controller");
+	RoncooUserLog userLog = new RoncooUserLog();
+           List<RoncooUser> users = new ArrayList<RoncooUser>();
+	Map<Integer, String> nameMaps = new HashMap<Integer, String>();
+          users = roncooUserDao.findAll();
+          userLog = roncooUserLogDao.findByUserName("hubo");
+	map.put("title", "hello world ," + userLog.getUserName() + " : " + userLog.getUserIp());
+	map.put("userList", users);
+	for (RoncooUser user : users) {
+	    nameMaps.put(user.getId(), user.getName());
+	}
+	map.put("userMap", nameMaps);
+	return "index"; // 这里是对应的模板的名称
+}
+
+index是放在目录下的index.ftl
+代码节选
+<center>
+	<img src="/images/logo.png" />
+	<h1 id="title">${title}</h1>
+	
+	
+	<input type="text" name="email" id="email" />
+	<button id="send">发送邮件</button>
+	
+	<input type="text" name="name" id="userName" />
+	<button id="saveUserName">保存用户</button>
+</center>
+
+<span>
+	<#if userList ??> <#--加这个当list对象为空时就不会报一堆错误-->  
+		${userList?size}   
+	</#if>
+	<#list userList?sort_by("name") as user> 
+		${user_index}
+	</#list>
+</span>
+
+比如上面的userList数据如下
+[
+RoncooUser [id=1, name=huboxxx, createTime=2018-02-24 10:18:33.0],
+RoncooUser [id=2, name=huboxxx1, createTime=2018-02-24 10:18:58.0], 
+RoncooUser [id=3, name=liyin, createTime=2018-02-24 10:19:46.0], 
+RoncooUser [id=4, name=ahb, createTime=2018-02-24 14:11:39.0]
+]
+
+1. freemarker获取list的size ：   
+    
+Freemaker   
+<#if userList ??> <#--加这个当list对象为空时就不会报错误，也可以<#if userMap?exists>-->  
+   ${userList?size}   //4
+</#if>   
+  扩展
+
+if...else...
+<#if condition>
+  ...
+<#elseif condition2>
+  ...
+<#elseif condition3>
+  ...
+<#else>
+  ...
+</#if>
+
+!：default value operator，语法结构为：unsafe_expr!default_expr，比如 ${mouse!"No mouse."} 当mouse不存在时，返回default value；
+(product.color)!"red" 这种方式，能够处理product或者color为miss value的情况；
+而product.color!"red"将只处理color为miss value的情况
+??: Missing value test operator ,测试是否为missing value
+unsafe_expr?? ：product.color??将只测试color是否为null
+(unsafe_expr)??：(product.color)??将测试product和color是否存在null
+?exists:旧版本的用法
+比如：<#if mouse??>
+Mouse found
+< #else>
+No mouse found
+< /#if>
+Creating mouse...
+< #assign mouse = "Jerry">
+< #if mouse??>
+Mouse found
+< #else>
+No mouse found
+< /#if>
+
+
+2. list的遍历：   
+  <#list userList as user>    
+    <tr>    
+        <td>${user.name}${user.createTime}<td>    
+    </tr>    
+</#list>    
+  
+3.list遍历中的下标序号：   
+  
+_index是list的一个属性，依次是0.1.2.3   
+  
+<#list userList as user>    
+     ${user_index}    //0,1,2,3
+</#list>     
+  
+4. list的嵌套：   
+  
+<#list aList as aVO>    
+   <#list bList as bVO>    
+           <#if bVO.kch=aVO.kch>    
+                  ${bVO.name}     
+           </#if>    
+   </#list>    
+</#list>    
+  
+  
+5. list排序：   
+      升序 .sort_by()   
+  
+<#list userList?sort_by("字段") as user>    
+	    <tr>    
+	        <td>${user.name}${user.createTime}<td>    
+	    </tr> 
+</#list>    
+  
+     降序 .sort_by()?reverse   
+<#list userList?sort_by("字段")?reverse as user>   
+    <tr>    
+        <td>${user.name}${user.createTime}<td>    
+    </tr>   
+</#list>    
+  
+  
+6. list标签遍历map：   
+  map?keys获取map中所有的key
+  map?values获取map中所有的value
+<#list map?keys as key>     
+    <option value="${key}">${userMap['${key}']}</option>     
+</#list> 
+注意：
+   FreeMarker中的哈希表要求其key必须是字符串，包括数据模型中的java.util.HashMap的key也要是字符串，否则报错
+   不能直接用list遍历map，需要先将map的key转换为相应的序列
+
